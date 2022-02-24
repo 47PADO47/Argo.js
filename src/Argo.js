@@ -32,11 +32,11 @@ class Argo {
         };
     };
 
-    async login() {
+    async login(school_code = this.school_code, username = this.username, password = this.#password) {
 
         if(this.authorized) return this.#log("Already logged in ❌");
 
-        const token = await this.#getToken();
+        const token = await this.#getToken(school_code, username, password);
         if(!token) return this.#log("Could not login ❌");
 
         const userData = await this.#getUserData(token);
@@ -47,13 +47,13 @@ class Argo {
 
         writeFileSync(`${this.directory}/argo.json`, JSON.stringify({ token, user: this.user, last_update: this.last_update }, null, 2));
 
-        if (this.authorized) {
-            this.#log(`Successfully logged in as "${this.user?.name} ${this.user?.surname}" ✅`);
-            return this.user;
-        } else {
+        if (!this.authorized) {
             this.#log("Could not login ❌");
-            return false;
+            return false; 
         };
+        
+        this.#log(`Successfully logged in as "${this.user?.name} ${this.user?.surname}" ✅`);
+        return this.user;
     };
 
     async logout() {
@@ -73,7 +73,7 @@ class Argo {
 
     async getStatus() {
         const data = await this.#fetch("verifica");
-        return data ?? [];
+        return data ?? {};
     };
 
     async getToday(date) {
@@ -255,10 +255,11 @@ class Argo {
         return json;
     };
     
-    async #getToken() {
+    async #getToken(school_code = this.school_code, username = this.username, password = this.#password) {
+        this.#headers["x-cod-min"] = school_code;
         const headers = Object.assign({ 
-            "x-user-id": this.username,
-            "x-pwd": this.#password
+            "x-user-id": username,
+            "x-pwd": password,
         }, this.#headers);
 
         const response = await fetch(`${this.base_url}/login?_dc=${Date.now().toFixed()}`, {
