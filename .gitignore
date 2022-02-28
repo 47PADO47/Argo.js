@@ -130,4 +130,5 @@ dist
 .pnp.*
 
 test.js
+test.ts
 argo.json
